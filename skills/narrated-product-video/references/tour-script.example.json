@@ -1,0 +1,255 @@
+{
+  "voice_style": "Un expert-comptable de quarante ans qui fait visiter son outil préféré à un confrère, assis à côté de lui devant l'écran : chaleureux, détendu, souriant, débit naturel et posé, phrases liées avec fluidité, petites respirations naturelles, jamais commercial ni récité.",
+  "chapters": [
+    {
+      "id": "c00",
+      "title": "Introduction",
+      "scene": "intro",
+      "beats": [
+        {
+          "id": "c00a",
+          "text": "Bonjour, et bienvenue dans fsprécompta. Dans les prochaines minutes, je vais vous montrer l'application en conditions réelles, avec de vraies factures, des deux côtés : celui de votre client, et celui de votre cabinet."
+        },
+        {
+          "id": "c00b",
+          "text": "L'idée est simple : tout ce qui arrive avant FS Compta, les photos de factures, les PDF, les tickets, arrive ici, est lu, contrôlé, et préparé en écriture. Allez, on commence par le client."
+        }
+      ]
+    },
+    {
+      "id": "cc0",
+      "title": "Créer un client",
+      "scene": "cab_clients",
+      "beats": [
+        {
+          "id": "cc0a",
+          "text": "Tout commence par vos clients. Vous créez son dossier avec sa raison sociale, son I.C.E. et son e-mail, ou vous les reprenez directement depuis FS Compta."
+        },
+        {
+          "id": "cc0b",
+          "text": "Son accès à l'espace client est créé aussitôt, et vous lui envoyez son invitation par e-mail. C'est tout ce qu'il lui faut pour commencer."
+        }
+      ]
+    },
+    {
+      "id": "c01",
+      "title": "L'application du cabinet",
+      "scene": "client_app",
+      "beats": [
+        {
+          "id": "c01a",
+          "text": "Votre client n'installe rien de compliqué. Vous lui envoyez un lien, ou un QR code, et il ajoute l'application de votre cabinet sur son écran d'accueil, avec votre nom et votre logo."
+        },
+        {
+          "id": "c01b",
+          "text": "Quand il l'ouvre, il voit tout de suite où en sont ses factures : reçues, en cours de vérification, validées, ou à renvoyer."
+        },
+        {
+          "id": "c01c",
+          "text": "Juste en dessous, ses dernières factures, avec le fournisseur, le montant et la date, chacune rangée dans son dossier."
+        }
+      ]
+    },
+    {
+      "id": "c02",
+      "title": "Envoyer une facture",
+      "scene": "client_upload",
+      "beats": [
+        {
+          "id": "c02a",
+          "text": "Pour envoyer une facture, il appuie sur « Déposer des factures ». Sur téléphone, il peut prendre une photo directement, ou choisir un fichier."
+        },
+        {
+          "id": "c02b",
+          "text": "Il choisit le dossier, il envoie, et c'est tout. Et si la connexion coupe, l'envoi reprend dès qu'elle revient."
+        },
+        {
+          "id": "c02c",
+          "text": "La facture apparaît aussitôt dans sa liste, avec le statut « Reçue ». Et s'il renvoie par erreur une facture déjà déposée, l'application l'arrête et lui indique la date du premier envoi."
+        },
+        {
+          "id": "c02d",
+          "text": "Et si un PDF contient plusieurs factures, il coche « Chaque page est une facture différente » : chaque page devient une facture à part."
+        }
+      ]
+    },
+    {
+      "id": "c03",
+      "title": "Messages, suivi et arabe",
+      "scene": "client_more",
+      "beats": [
+        {
+          "id": "c03a",
+          "text": "Les échanges avec le cabinet se font dans « Messages ». Chaque message peut être rattaché à la facture concernée, avec des pièces jointes, et le client voit quand le cabinet l'a lu. Fini les questions perdues dans WhatsApp."
+        },
+        {
+          "id": "c03b",
+          "text": "Dans « Statistiques », il retrouve ses envois par période et par dossier, ses principaux fournisseurs, et même les mois où il n'a rien envoyé. Dans « Facturation », il peut créer et envoyer ses propres factures de vente, avec toutes les mentions légales."
+        },
+        {
+          "id": "c03c",
+          "text": "Et tout l'espace client existe en arabe, de droite à gauche, en un geste. Pour beaucoup de vos clients, ça change tout."
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "title": "Côté cabinet : la facture arrive",
+      "scene": "cab_arrive",
+      "beats": [
+        {
+          "id": "c04a",
+          "text": "Passons maintenant de l'autre côté, dans le cabinet. Voici la liste des factures de tous vos clients, avec le fournisseur, la date, le montant, et le statut."
+        },
+        {
+          "id": "c04b",
+          "text": "Regardez la première ligne : c'est la photo que notre client vient d'envoyer. En quelques secondes, elle passe à « Extrait »."
+        },
+        {
+          "id": "c04c",
+          "text": "Fournisseur, numéro, date, montants : tout a été lu sur la photo, sans aucune saisie."
+        }
+      ]
+    },
+    {
+      "id": "c05",
+      "title": "Revoir une facture",
+      "scene": "cab_review",
+      "beats": [
+        {
+          "id": "c05a",
+          "text": "On ouvre une facture. À droite, la pièce d'origine. À gauche, les données extraites : le fournisseur, reconnu et rattaché à sa fiche, le numéro, la date, l'I.C.E. et l'identifiant fiscal."
+        },
+        {
+          "id": "c05b",
+          "text": "La petite coche verte à côté de l'I.C.E., c'est un contrôle : le format du numéro est vérifié. Et en dessous, les montants, présentés comme sur la facture."
+        },
+        {
+          "id": "c05c",
+          "text": "Cette facture a deux taux de T.V.A., dix et vingt pour cent. Chaque taux a sa ligne, sa base et sa T.V.A., et l'application vérifie que hors taxes plus T.V.A. donne bien le T.T.C."
+        },
+        {
+          "id": "c05d",
+          "text": "Plus bas, la partie comptable : chaque taux est déjà affecté à son compte de charge et à son compte de T.V.A. récupérable, selon le plan comptable marocain."
+        },
+        {
+          "id": "c05e",
+          "text": "Ces affectations viennent des modèles de saisie de chaque fournisseur. Une fois réglé, un fournisseur est imputé automatiquement à chaque nouvelle facture."
+        }
+      ]
+    },
+    {
+      "id": "c06",
+      "title": "Valider et comptabiliser",
+      "scene": "cab_validate",
+      "beats": [
+        {
+          "id": "c06a",
+          "text": "Si tout est bon, on clique sur « Valider et comptabiliser ». L'écriture est générée et passée au journal des achats."
+        },
+        {
+          "id": "c06b",
+          "text": "Voici l'écran « Facture et écriture » : la pièce, le journal, la référence, et les lignes. Charge au débit, T.V.A. au débit, fournisseur au crédit. L'écriture est équilibrée."
+        },
+        {
+          "id": "c06c",
+          "text": "Toutes les écritures validées se retrouvent dans « Écritures comptables ». C'est là que FS Compta vient les chercher, avec leurs pièces."
+        }
+      ]
+    },
+    {
+      "id": "c07",
+      "title": "Traiter en volume",
+      "scene": "cab_bulk",
+      "beats": [
+        {
+          "id": "c07a",
+          "text": "En fin de mois, vous recevez des dizaines de pièces. Vous pouvez aussi téléverser vous-même un lot de factures pour un client : PDF, scans, photos, tout passe."
+        },
+        {
+          "id": "c07b",
+          "text": "Elles sont lues en parallèle. Ensuite, on sélectionne celles qui sont prêtes, et on les valide et comptabilise en une seule action."
+        },
+        {
+          "id": "c07c",
+          "text": "Et pour aller encore plus vite, « Valider et suivant » enchaîne les factures une par une, au clavier, sans revenir à la liste."
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "title": "La T.V.A.",
+      "scene": "cab_tva",
+      "beats": [
+        {
+          "id": "c08a",
+          "text": "Côté fiscalité, les relevés de déductions de T.V.A. se préparent à partir des factures validées et payées, par période, selon le régime du client."
+        },
+        {
+          "id": "c08b",
+          "text": "On vérifie le relevé, puis on l'exporte en PDF, en Excel, ou en X.M.L. pour SIMPL-T.V.A. Plus de recopie ligne par ligne."
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "title": "Ventes et relances",
+      "scene": "cab_sales",
+      "beats": [
+        {
+          "id": "c09a",
+          "text": "Le cabinet peut aussi établir ses propres factures de vente, avec les mentions légales marocaines, l'I.C.E. du client, et le montant en toutes lettres."
+        },
+        {
+          "id": "c09b",
+          "text": "Et les relances partent toutes seules : avant l'échéance, le jour même, puis en cas de retard, par e-mail ou par WhatsApp, avec le lien vers la facture."
+        },
+        {
+          "id": "c09c",
+          "text": "Il suffit de connecter le WhatsApp du cabinet une fois, avec un QR code. Chaque message envoyé est suivi dans l'historique."
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "title": "Collaboration et équipe",
+      "scene": "cab_team",
+      "beats": [
+        {
+          "id": "c10a",
+          "text": "Quand une pièce pose question, on ajoute une note directement depuis la facture. Le client la reçoit dans son application, en notification, et peut répondre avec un nouveau justificatif."
+        },
+        {
+          "id": "c10b",
+          "text": "Dans « Équipe », chaque collaborateur a son profil : chef de mission, comptable, aide-comptable. Vous choisissez ses droits, et les clients dont il s'occupe."
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "title": "Le pont avec FS Compta",
+      "scene": "cab_bridge",
+      "beats": [
+        {
+          "id": "c11a",
+          "text": "Enfin, le lien avec FS Compta. Vous générez votre clé dans les paramètres de fsprécompta, et vous la collez dans les paramètres de FS Compta. C'est tout."
+        },
+        {
+          "id": "c11b",
+          "text": "À partir de là, tout se synchronise : votre plan comptable, vos clients, vos fournisseurs et vos modèles de saisie arrivent depuis FS Compta, et les écritures validées repartent avec leurs pièces justificatives, sans aucune ressaisie."
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "title": "Conclusion",
+      "scene": "outro",
+      "beats": [
+        {
+          "id": "c12a",
+          "text": "Voilà pour le tour. Vos clients envoient une photo, et votre cabinet reçoit une écriture prête pour FS Compta. Contactez-nous pour découvrir l'offre adaptée à votre cabinet. Merci de nous avoir suivis, et à très vite."
+        }
+      ]
+    }
+  ]
+}
