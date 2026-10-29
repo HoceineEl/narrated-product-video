@@ -1,51 +1,43 @@
-import { chromium } from '../rec/node_modules/playwright/index.mjs';
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { mkdirSync, readFileSync, renameSync, writeFileSync, rmSync } from 'node:fs';
+import { extname, resolve } from 'node:path';
 
-process.env.DEMO_FFMPEG ??= '/opt/homebrew/bin/ffmpeg';
+const { chromium } = createRequire(`${process.cwd()}/`)('playwright');
 
-export const ROOT = new URL('./', import.meta.url).pathname;
-export const PROJECT = process.env.APP_PROJECT ?? process.cwd();
-export const SLUG = process.env.APP_TENANT ?? 'demo';
-export const BASE = `https://${SLUG}.myapp.test`;
-export const STATE = JSON.parse(readFileSync(`${ROOT}../seed/state.json`, 'utf8'));
-export const INVOICES = `${ROOT}../invoices/out/final`;
-
-const logo = `data:image/png;base64,${readFileSync(`${ROOT}assets/fs-mark.png`).toString('base64')}`;
-const overlay = readFileSync(`${ROOT}overlay.js`, 'utf8');
+export const TAKES = resolve(process.env.TAKES_DIR ?? 'takes');
+const overlay = readFileSync(new URL('./overlay.js', import.meta.url), 'utf8');
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export const tinker = (php) => execFileSync('php', ['artisan', 'tinker', '--execute', php], { cwd: PROJECT, encoding: 'utf8' });
+const dataUrl = (path) => {
+    if (!path) return '';
+    const type = { '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' }[extname(path)] ?? 'image/png';
+    return `data:${type};base64,${readFileSync(path).toString('base64')}`;
+};
 
-export const NO_TRIAL = `document.addEventListener('DOMContentLoaded', () => {
-    const map = [[/^Essayer gratuitement$/, 'Nous contacter'], [/^Sans carte bancaire$/, 'Le compagnon de FS COMPTA'], [/^Créez l.espace de votre cabinet.*/, 'Contactez-nous pour découvrir l’offre adaptée à votre cabinet.']];
+export function rewriteText(map = [], removeSelectors = []) {
+    const pairs = map.map(([re, value]) => [re.source, re.flags, value]);
+    return `document.addEventListener('DOMContentLoaded', () => {
+    const map = ${JSON.stringify(pairs)}.map(([s, f, v]) => [new RegExp(s, f), v]);
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n; (n = w.nextNode());) { const t = n.nodeValue.trim(); for (const [re, v] of map) if (re.test(t)) n.nodeValue = v; }
-    document.querySelectorAll('#pricing, #tarifs, [data-section=pricing]').forEach((e) => e.remove());
-    document.querySelectorAll('a[href*="#pricing"], a[href*="#tarifs"], a[href*="/tarifs"], a[href*="/pricing"]').forEach((e) => e.remove());
+    document.querySelectorAll(${JSON.stringify(removeSelectors.join(', ') || '#__none')}).forEach((e) => e.remove());
 });`;
-export const QUIET = `try { const f = String(Date.now() + 864e9); for (const k of ['app-push-dismissed-until','app-local-backup-dismissed-until']) localStorage.setItem(k, f); } catch (e) {}`;
+}
+
+export const presetStorage = (entries = {}) => `try { for (const [k, v] of Object.entries(${JSON.stringify(entries)})) localStorage.setItem(k, v); } catch (e) {}`;
 
 export async function launch() {
-    return chromium.launch({ channel: 'chromium', args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--disable-lcd-text'] });
+    return chromium.launch({ args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--disable-lcd-text'] });
 }
 
-export async function storageFor(browser, email) {
-    const url = tinker(`\\Illuminate\\Support\\Facades\\URL::forceScheme('https'); config(['app.url' => 'https://' . config('app.domain')]); $u = \\App\\Models\\User::where('email', ${JSON.stringify(email)})->firstOrFail(); $u->forceFill(['locale' => 'fr'])->save(); echo \\Illuminate\\Support\\Facades\\URL::temporarySignedRoute('dev.login', now()->addHour(), ['user' => $u->id]);`)
-        .trim().split('\n').filter((l) => l.startsWith('http')).pop();
-    const context = await browser.newContext({ ignoreHTTPSErrors: true });
-    const page = await context.newPage();
-    await page.goto(url);
-    await page.waitForLoadState('networkidle').catch(() => {});
-    const state = await context.storageState();
-    await context.close();
-    return state;
-}
-
-export async function recordingContext(browser, { storageState, name, viewport = { width: 1920, height: 1080 }, zoom = 1.25, noZoom = false, record = true, userAgent = undefined }) {
-    mkdirSync(`${ROOT}takes`, { recursive: true });
-    const dir = `${ROOT}takes/raw-${name}`;
+export async function recordingContext(browser, {
+    name, storageState, viewport = { width: 1920, height: 1080 }, zoom = 1.25, noZoom = false, record = true,
+    userAgent, locale = 'en-US', timezoneId = 'UTC', colorScheme = 'light',
+    theme = {}, logo = process.env.DEMO_LOGO, hide = [], initScripts = [],
+}) {
+    mkdirSync(TAKES, { recursive: true });
+    const dir = `${TAKES}/raw-${name}`;
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
     const context = await browser.newContext({
@@ -53,15 +45,18 @@ export async function recordingContext(browser, { storageState, name, viewport =
         ignoreHTTPSErrors: true,
         viewport,
         deviceScaleFactor: 1,
-        locale: 'fr-FR',
-        timezoneId: 'Africa/Casablanca',
-        colorScheme: 'light',
+        locale,
+        timezoneId,
+        colorScheme,
         ...(userAgent ? { userAgent } : {}),
         ...(record ? { recordVideo: { dir, size: { width: 1920, height: 1080 } } } : {}),
     });
-    await context.addInitScript(({ logo, zoom, noZoom }) => { window.__DEMO_LOGO = logo; window.__DEMO_ZOOM = zoom; window.__DEMO_NO_ZOOM = noZoom; }, { logo, zoom, noZoom });
-    await context.addInitScript({ content: QUIET });
-    await context.addInitScript({ content: NO_TRIAL });
+    await context.addInitScript(({ logo, zoom, noZoom, theme, hide }) => {
+        Object.assign(window, { __DEMO_LOGO: logo, __DEMO_ZOOM: zoom, __DEMO_NO_ZOOM: noZoom, __DEMO_THEME: theme, __DEMO_HIDE: hide });
+    }, { logo: dataUrl(logo), zoom, noZoom, theme, hide });
+    for (const content of initScripts) {
+        await context.addInitScript({ content });
+    }
     await context.addInitScript({ content: overlay });
     return context;
 }
@@ -247,7 +242,7 @@ export class Director {
                 await this.demo('ripple', this.mouse.x, this.mouse.y);
             }
         }
-        await this.page.evaluate((u) => window.Livewire.navigate(u), url);
+        await this.page.evaluate((u) => (window.Livewire?.navigate ? window.Livewire.navigate(u) : window.location.assign(u)), url);
         await this.page.waitForURL((u) => u.toString().startsWith(url.split('?')[0]), { timeout: 30000 }).catch(() => {});
         await this.page.waitForLoadState('networkidle').catch(() => {});
     }
@@ -258,15 +253,15 @@ export class Director {
         this.mark('end');
         const video = this.page.video();
         if (!video) {
-            await this.page.screenshot({ path: `${ROOT}takes/${this.name}-dry.png` }).catch(() => {});
+            await this.page.screenshot({ path: `${TAKES}/${this.name}-dry.png` }).catch(() => {});
             await this.page.context().close();
-            writeFileSync(`${ROOT}takes/${this.name}.json`, JSON.stringify(this.marks, null, 2));
+            writeFileSync(`${TAKES}/${this.name}.json`, JSON.stringify(this.marks, null, 2));
             return null;
         }
         await this.page.context().close();
-        const out = `${ROOT}takes/${this.name}.mkv`;
+        const out = `${TAKES}/${this.name}.mkv`;
         renameSync(await video.path(), out);
-        writeFileSync(`${ROOT}takes/${this.name}.json`, JSON.stringify(this.marks, null, 2));
+        writeFileSync(`${TAKES}/${this.name}.json`, JSON.stringify(this.marks, null, 2));
         console.log(`saved ${out}`);
         return out;
     }

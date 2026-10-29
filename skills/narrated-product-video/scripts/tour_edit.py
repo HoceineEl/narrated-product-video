@@ -1,22 +1,31 @@
-"""Assemble the tour: python3 tour_edit.py <beats_dir> <out.mp4>
-Takes live in kit-video/takes/<name>.mkv + .json (Director marks)."""
-import json, os, subprocess, sys
+#!/usr/bin/env python3
+"""Assemble a narrated app tour from Playwright takes and per-beat voice clips.
+
+  tour_edit.py --takes takes/ --beats beats/ --config tour.json --out-dir build/
+
+Each take is takes/<name>.mkv plus takes/<name>.json (the Director's timestamped marks: sync, ready,
+beat:<id>, end:<id>, sfx:<kind>, out). tour.json:
+  {"order": ["tour-intro", "tour-clients", ...],      takes in film order (required)
+   "end_mark": {"tour-bulk": "end:c07b"},             cut a take at a mark instead of "out"
+   "end_time": {"tour-validate": 48.3},               or at a fixed time in the take
+   "speed_cap": {"c04b": 4.0},                        max fast-forward for a beat whose action must be seen
+   "zoom": {"c04b": [1.55, 1080, 420]},               zoom factor and centre (1920x1080 px) during a beat
+   "no_trim_intro": ["tour-intro", "tour-outro"]}     takes that keep their opening cover
+
+Per take: find the magenta sync flash, start just after the chapter cover lifts, place each beat's voice
+at its mark + 0.12 s, freeze-pad when the voice is longer than the action, fast-forward idle tails,
+gaps and blank frames, then apply zooms as an output-time zoompan pass.
+Writes <out-dir>/<take>.mp4, tour-silent.mp4 and events.json ({voice, sfx, duration}) for the mix.
+"""
+import argparse
+import json
+import os
+import subprocess
+
 import numpy as np
 
-ROOT = os.environ.get('VIDEO_ROOT', os.path.expanduser('~/Downloads/my-app-videos'))
-TAKES = f'{ROOT}/kit-video/takes'
-ORDER = ['tour-intro', 'tour-clients', 'tour-client-phone', 'tour-client-desk', 'tour-arrive', 'tour-review', 'tour-validate', 'tour-bulk', 'tour-bulk2', 'tour-tva', 'tour-sales', 'tour-team', 'tour-bridge', 'tour-outro']
-END = {'tour-bulk': 'end:c07b'}
-END_T = {'tour-validate': 48.3}
-SPEED_CAP = {'c04b': 4.0, 'c05e': 3.0, 'c07c': 4.0}
-ZOOM = {
-    'c04b': (1.55, 1080, 420), 'c04c': (1.55, 1080, 420),
-    'c07b': (1.3, 1100, 520),
-    'c08b': (1.3, 1100, 560),
-    'c10b': (1.3, 1100, 420),
-    
-}
-
+CFG = {}
+TAKES = ''
 def zexpr(wins):
     if not wins:
         return None
@@ -53,13 +62,13 @@ def flash_time(video, search=40):
 
 
 def blank_runs(video, off, a, b):
-    raw = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{a + off:.3f}', '-to', f'{b + off:.3f}', '-i', video, '-vf', 'fps=10,scale=64:36,format=gray', '-f', 'rawvideo', '-'], capture_output=True).stdout
-    std = np.frombuffer(raw, np.uint8).reshape(-1, 36 * 64).std(1)
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{a + off:.3f}', '-to', f'{b + off:.3f}', '-i', video, '-vf', 'fps=10,scale=160:90,format=gray', '-f', 'rawvideo', '-'], capture_output=True).stdout
+    std = np.frombuffer(raw, np.uint8).reshape(-1, 160 * 90).std(1)
     runs, start = [], None
     for i, v in enumerate(list(std) + [99]):
-        if v < 6 and start is None:
+        if v < 2 and start is None:
             start = i
-        elif v >= 6 and start is not None:
+        elif v >= 2 and start is not None:
             if i - start >= 3:
                 runs.append((a + start / 10 + 0.05, a + i / 10 - 0.05))
             start = None
@@ -73,11 +82,13 @@ def first(marks, label, after=-1):
     return None
 
 
-def build(beats_dir, out):
-    work = f'{ROOT}/tour/build'
+def build(beats_dir, work):
     os.makedirs(work, exist_ok=True)
     segs, voice, sfx = [], [], []
     cursor = 0.0
+    ORDER, END, END_T = CFG['order'], CFG.get('end_mark', {}), CFG.get('end_time', {})
+    SPEED_CAP, ZOOM = CFG.get('speed_cap', {}), CFG.get('zoom', {})
+    keep_intro = set(CFG.get('no_trim_intro', []))
     for name in ORDER:
         video = f'{TAKES}/{name}.mkv'
         if not os.path.exists(video):
@@ -90,7 +101,7 @@ def build(beats_dir, out):
         cover = first(marks, 'sfx:cover', ready)
         fb = min([x['t'] for x in marks if x['label'].startswith('beat:')] or [ready + 1])
         unc = max([x['t'] for x in marks if x['label'] == 'sfx:uncover' and ready <= x['t'] <= fb] or [None], key=lambda v: v or 0)
-        start_m = unc + 0.45 if (unc is not None and name not in ('tour-intro', 'tour-outro')) else ready + 0.25
+        start_m = unc + 0.45 if (unc is not None and name not in keep_intro) else ready + 0.25
         end_m = END_T[name] if name in END_T else (first(marks, END[name]) + 0.3) if name in END else first(marks, 'out') + 0.5
         le = [x['t'] for x in marks if x['label'].startswith('end:') and x['t'] <= end_m + 0.01]
         if le and name not in END_T:
@@ -104,8 +115,6 @@ def build(beats_dir, out):
             if e is None or m['t'] > end_m - 0.6:
                 continue
             e = min(e, end_m)
-            if False:
-                continue
             wav = f'{beats_dir}/{bid}.wav'
             if not os.path.exists(wav):
                 print('  no audio for', bid)
@@ -189,4 +198,12 @@ def build(beats_dir, out):
 
 
 if __name__ == '__main__':
-    build(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--takes', required=True)
+    p.add_argument('--beats', required=True)
+    p.add_argument('--config', required=True)
+    p.add_argument('--out-dir', required=True)
+    a = p.parse_args()
+    CFG.update(json.load(open(a.config)))
+    TAKES = os.path.abspath(a.takes)
+    build(os.path.abspath(a.beats), os.path.abspath(a.out_dir))

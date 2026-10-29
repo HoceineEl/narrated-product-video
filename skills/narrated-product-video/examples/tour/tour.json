@@ -1,0 +1,8 @@
+{
+  "order": ["tour-intro", "tour-clients", "tour-client-phone", "tour-review", "tour-validate", "tour-outro"],
+  "end_mark": {"tour-review": "end:c05e"},
+  "end_time": {"tour-validate": 48.3},
+  "speed_cap": {"c04b": 4.0, "c05e": 3.0},
+  "zoom": {"c04b": [1.55, 1080, 420], "c07b": [1.3, 1100, 520]},
+  "no_trim_intro": ["tour-intro", "tour-outro"]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "narrated-product-video",
+  "owner": {
+    "name": "HoceineEL"
+  },
+  "metadata": {
+    "description": "Narrated launch films and app tours for web apps, synced to a natural voice-over",
+    "version": "2.0.0"
+  },
+  "plugins": [
+    {
+      "name": "narrated-product-video",
+      "description": "Launch films (HyperFrames) and app tours (Playwright) with a fact-checked script, Gemini TTS voice-over, word-synced picture, sound design and automated QA",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/narrated-product-video"
+      ]
+    }
+  ]
+}

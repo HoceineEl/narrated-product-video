@@ -1,7 +1,16 @@
-"""python3 launch_cues.py -> launch/cues3.json (SFX keyed to word onsets in launch/T.json)"""
-import json, os
-ROOT = os.path.join(os.environ.get('VIDEO_ROOT', os.path.expanduser('~/Downloads/my-app-videos')), 'launch')
-T = json.load(open(f'{ROOT}/T.json'))
+"""Example cue sheet from a shipped 70 s French launch film: every sound is keyed to a spoken word.
+
+  python3 cues.py T.json vo-m.wav cues.json && python3 ../../scripts/mix.py cues.json mix.wav --lib lib=~/sfx --lib brag=~/sfx/brag
+
+T.json comes from scripts/word_times.py (keys such as "whats", "photos", "voici"). The pattern to copy:
+a whoosh 0.3 s before each scene change, a click on every tap, a soft pop on every chip, an impact
+on the logo, and a long low bed only where the voice is busy. File names refer to the author's
+libraries (Kenney, Mixkit, BigSoundBank); swap in your own.
+"""
+import json
+import sys
+
+T = json.load(open(sys.argv[1]))
 C = []
 W = ['lib/bsb/whoosh-1795.wav', 'lib/bsb/whoosh-1796.wav', 'lib/bsb/whoosh-1797.wav', 'lib/bsb/whoosh-1798.wav']
 
@@ -18,7 +27,7 @@ def whoosh(t, i=0, g=-14):
     c(t, W[i % 4], g, lp=7000, p=i % 3 - 1)
 
 
-# S1 hook
+# scene 1: hook
 c(0.0, 'lib/kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg', -10)
 c(0.0, 'lib/mixkit/2364.wav', -16)
 whoosh(at('whats', -0.5), 2, -15)
@@ -37,7 +46,7 @@ c(at('sacs', 0.16), 'lib/synth/bag.wav', -10)
 for i in range(4):
     c(at('sacs', 0.22 + i * 0.07), f'brag/casino/card-slide-{i + 1}.ogg', -11, p=i % 3)
 c(at('cab', -0.45), 'lib/mixkit/1492.wav', -10, lp=7000)
-# S2 grind
+# scene 2: the grind
 c(at('cab', -0.1), 'brag/casino/card-slide-5.ogg', -9)
 for i, k in enumerate(['saisit', 'verifie', 'relance']):
     c(at(k, -0.1), f'brag/impact/impactSoft_medium_00{i}.ogg', -6, p=i)
@@ -133,6 +142,6 @@ c(at('brand', -0.1), 'lib/kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.
 c(at('brand', -0.1), 'brag/impact/impactSoft_heavy_003.ogg', -8)
 c(at('contact', 0.3), 'lib/mixkit/3005.wav', -13)
 c(at('contact', 0.8), 'brag/interface/drop_002.ogg', -14)
-cfg = dict(duration=T['dur'], voice=[dict(file=f'{ROOT}/vo/take4-m.wav', t=0.0, gain=0)], sfx=sorted(C, key=lambda x: x['t']), room=-46, duck_db=5, target_lufs=-14)
-json.dump(cfg, open(f'{ROOT}/cues3.json', 'w'), indent=1)
+cfg = dict(duration=T['end'] + 2.6, voice=[dict(file=sys.argv[2], t=0.0, gain=0)], sfx=sorted(C, key=lambda x: x['t']), room=-46, duck_db=5, target_lufs=-14)
+json.dump(cfg, open(sys.argv[3], 'w'), indent=1)
 print(len(C), 'cues')

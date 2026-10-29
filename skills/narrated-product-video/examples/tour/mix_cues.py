@@ -1,10 +1,20 @@
-"""Build tour cue sheet from build/events.json and mix: python3 tour_mix.py <beats_dir> <out.wav> [intro_offset]"""
-import json, os, subprocess, sys
-ROOT = os.environ.get('VIDEO_ROOT', os.path.expanduser('~/Downloads/my-app-videos'))
-ev = json.load(open(f'{ROOT}/tour/build/events.json'))
-beats_dir, out = sys.argv[1], sys.argv[2]
-OFF = float(sys.argv[3]) if len(sys.argv) > 3 else 0.0
-TAIL = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
+"""Example: turn the tour editor's events.json into a cue sheet and mix it.
+
+  python3 mix_cues.py build/events.json build/cues.json mix.wav [intro_offset] [outro_tail]
+
+events.json (from scripts/tour_edit.py) lists every voice clip and every Director sfx mark
+(click, cover, uncover, chip, caption, done). Each kind maps to one family of sounds below.
+"""
+import json
+import os
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ev = json.load(open(sys.argv[1]))
+cues_path, out = sys.argv[2], sys.argv[3]
+OFF = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0
+TAIL = float(sys.argv[5]) if len(sys.argv) > 5 else 0.0
 clicks = ['brag/ui/click1.ogg', 'brag/ui/click2.ogg', 'brag/ui/click3.ogg', 'brag/ui/mouseclick1.ogg']
 cues, k = [], 0
 for s in ev['sfx']:
@@ -31,5 +41,5 @@ total = ev['duration'] + OFF + TAIL
 if TAIL:
     cues += [dict(t=ev['duration'] + OFF + 0.3, f='brag/impact/impactBell_heavy_004.ogg', g=-9)]
 cfg = dict(duration=total, voice=voice, sfx=cues, room=-50, duck_db=6, target_lufs=-15)
-json.dump(cfg, open(f'{ROOT}/tour/build/cues.json', 'w'), indent=1)
-subprocess.run(['python3', f'{ROOT}/tools/mix.py', f'{ROOT}/tour/build/cues.json', out], check=True)
+json.dump(cfg, open(cues_path, 'w'), indent=1)
+subprocess.run([sys.executable, os.path.join(HERE, '../../scripts/mix.py'), cues_path, out], check=True)

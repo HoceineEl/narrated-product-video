@@ -8,11 +8,11 @@
       "beats": [
         {
           "id": "c00a",
-          "text": "Bonjour, et bienvenue dans fsprécompta. Dans les prochaines minutes, je vais vous montrer l'application en conditions réelles, avec de vraies factures, des deux côtés : celui de votre client, et celui de votre cabinet."
+          "text": "Bonjour, et bienvenue dans Ledgerly Inbox. Dans les prochaines minutes, je vais vous montrer l'application en conditions réelles, avec de vraies factures, des deux côtés : celui de votre client, et celui de votre cabinet."
         },
         {
           "id": "c00b",
-          "text": "L'idée est simple : tout ce qui arrive avant FS Compta, les photos de factures, les PDF, les tickets, arrive ici, est lu, contrôlé, et préparé en écriture. Allez, on commence par le client."
+          "text": "L'idée est simple : tout ce qui arrive avant Ledgerly, les photos de factures, les PDF, les tickets, arrive ici, est lu, contrôlé, et préparé en écriture. Allez, on commence par le client."
         }
       ]
     },
@@ -23,7 +23,7 @@
       "beats": [
         {
           "id": "cc0a",
-          "text": "Tout commence par vos clients. Vous créez son dossier avec sa raison sociale, son I.C.E. et son e-mail, ou vous les reprenez directement depuis FS Compta."
+          "text": "Tout commence par vos clients. Vous créez son dossier avec sa raison sociale, son I.C.E. et son e-mail, ou vous les reprenez directement depuis Ledgerly."
         },
         {
           "id": "cc0b",
@@ -153,7 +153,7 @@
         },
         {
           "id": "c06c",
-          "text": "Toutes les écritures validées se retrouvent dans « Écritures comptables ». C'est là que FS Compta vient les chercher, avec leurs pièces."
+          "text": "Toutes les écritures validées se retrouvent dans « Écritures comptables ». C'est là que Ledgerly vient les chercher, avec leurs pièces."
         }
       ]
     },
@@ -227,16 +227,16 @@
     },
     {
       "id": "c11",
-      "title": "Le pont avec FS Compta",
+      "title": "Le pont avec Ledgerly",
       "scene": "cab_bridge",
       "beats": [
         {
           "id": "c11a",
-          "text": "Enfin, le lien avec FS Compta. Vous générez votre clé dans les paramètres de fsprécompta, et vous la collez dans les paramètres de FS Compta. C'est tout."
+          "text": "Enfin, le lien avec Ledgerly. Vous générez votre clé dans les paramètres de Ledgerly Inbox, et vous la collez dans les paramètres de Ledgerly. C'est tout."
         },
         {
           "id": "c11b",
-          "text": "À partir de là, tout se synchronise : votre plan comptable, vos clients, vos fournisseurs et vos modèles de saisie arrivent depuis FS Compta, et les écritures validées repartent avec leurs pièces justificatives, sans aucune ressaisie."
+          "text": "À partir de là, tout se synchronise : votre plan comptable, vos clients, vos fournisseurs et vos modèles de saisie arrivent depuis Ledgerly, et les écritures validées repartent avec leurs pièces justificatives, sans aucune ressaisie."
         }
       ]
     },
@@ -247,7 +247,7 @@
       "beats": [
         {
           "id": "c12a",
-          "text": "Voilà pour le tour. Vos clients envoient une photo, et votre cabinet reçoit une écriture prête pour FS Compta. Contactez-nous pour découvrir l'offre adaptée à votre cabinet. Merci de nous avoir suivis, et à très vite."
+          "text": "Voilà pour le tour. Vos clients envoient une photo, et votre cabinet reçoit une écriture prête pour Ledgerly. Contactez-nous pour découvrir l'offre adaptée à votre cabinet. Merci de nous avoir suivis, et à très vite."
         }
       ]
     }

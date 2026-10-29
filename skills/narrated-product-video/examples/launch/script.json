@@ -1,0 +1,72 @@
+{
+ "voice": "en-us-podcaster-1",
+ "voice_style": "A senior front-end developer showing a tool to a friend at his desk, screen sharing. Relaxed, a little dry, genuinely amused by how annoying the old way is. Conversational and natural, with real human pauses and small emphasis on the punchlines. Never an announcer, never salesy, no radio voice. Casual American man in his thirties.",
+ "chapters": [
+  {
+   "id": "launch",
+   "title": "PickCode launch film (49.8 s, shipped)",
+   "beats": [
+    {
+     "id": "hook",
+     "text": "You know that card on someone's site you'd love to steal?"
+    },
+    {
+     "id": "devtools",
+     "text": "So you open DevTools."
+    },
+    {
+     "id": "count",
+     "text": "Four hundred eighty computed styles. For one card."
+    },
+    {
+     "id": "nope",
+     "text": "Yeah, no."
+    },
+    {
+     "id": "keys",
+     "text": "Hit Alt, Shift, C."
+    },
+    {
+     "id": "name",
+     "text": "That's PickCode."
+    },
+    {
+     "id": "hover",
+     "text": "Hover anything. Tailwind classes, font, contrast, right there."
+    },
+    {
+     "id": "click",
+     "text": "Click, and the whole card's on your clipboard."
+    },
+    {
+     "id": "double",
+     "text": "Double click if you want to read it first."
+    },
+    {
+     "id": "formats",
+     "text": "React? Blade? Plain HTML? Your call."
+    },
+    {
+     "id": "lists",
+     "text": "Lists come out as an actual map. Or a foreach."
+    },
+    {
+     "id": "rules",
+     "text": "Every CSS rule, sorted by specificity. Overrides crossed out."
+    },
+    {
+     "id": "paste",
+     "text": "Paste it. Looks just like the original."
+    },
+    {
+     "id": "claim",
+     "text": "Copy any element as Tailwind."
+    },
+    {
+     "id": "brand",
+     "text": "PickCode. Free to start on Chrome."
+    }
+   ]
+  }
+ ]
+}

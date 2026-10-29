@@ -1,19 +1,37 @@
-"""Cue-sheet audio mixer: python3 mix.py cues.json out.wav
-cues.json = {"duration": s, "sr": 48000, "voice": [{"file":..., "t":..., "gain":dB}],
-             "sfx": [{"t":s, "f":path, "g":dB, "p":semitones, "rev":bool, "ss":start, "dur":s, "fade":s}],
-             "room": dB, "duck_db": 6, "target_lufs": -14}"""
-import json, subprocess, sys, os
+#!/usr/bin/env python3
+"""Mix a voice-over and sound effects from a cue sheet, duck the effects under the voice, normalize loudness.
+
+  mix.py cues.json out.wav [--lib ui=~/sfx/kenney --lib pads=~/sfx/mixkit]
+
+cues.json:
+  {"duration": 49.7,
+   "voice": [{"file": "vo.wav", "t": 0.3, "gain": 0}],
+   "sfx":   [{"t": 3.1, "f": "ui/click1.ogg", "g": -12, "p": 2, "rev": false, "ss": 0, "dur": null,
+              "fade": 0.03, "lp": 7000}],
+   "room": -48, "duck_db": 6, "target_lufs": -14}
+
+t = seconds in the film, g = gain dB, p = pitch semitones, ss/dur = trim the source, lp = lowpass Hz,
+room = pink room tone level (omit for none). "f" may start with a --lib name, e.g. "ui/click1.ogg".
+Libraries can also come from SFX_LIBS="ui=/path,pads=/path".
+"""
+import argparse
+import json
+import os
+import subprocess
+
 import numpy as np
+
 SR = 48000
-LIB = {
-    'brag': os.path.expanduser('~/.claude/plugins/cache/brag/brag/0.2.2/skills/brag/assets/sfx'),
-    'lib': os.path.join(os.environ.get('VIDEO_ROOT', os.path.expanduser('~/Downloads/my-app-videos')), 'sfx-lib'),
-}
+LIB = {}
 _cache = {}
+
+
 def load(path, ss=0, dur=None, af=None):
     for k, v in LIB.items():
         if path.startswith(k + '/'):
             path = v + path[len(k):]
+    if not os.path.exists(path):
+        raise SystemExit(f'sound not found: {path} (register its folder with --lib name=path or SFX_LIBS)')
     key = (path, ss, dur, af)
     if key in _cache:
         return _cache[key]
@@ -21,6 +39,8 @@ def load(path, ss=0, dur=None, af=None):
     a = np.frombuffer(subprocess.run(cmd, capture_output=True, check=True).stdout, dtype=np.float32).reshape(-1, 2).copy()
     _cache[key] = a
     return a
+
+
 def pitch(a, semis):
     if not semis:
         return a
@@ -28,6 +48,8 @@ def pitch(a, semis):
     n = int(len(a) / r)
     idx = np.linspace(0, len(a) - 1, n)
     return np.stack([np.interp(idx, np.arange(len(a)), a[:, c]) for c in (0, 1)], 1).astype(np.float32)
+
+
 def place(bus, a, t, g):
     i = int(t * SR)
     if i < 0:
@@ -35,6 +57,16 @@ def place(bus, a, t, g):
     j = min(len(bus), i + len(a))
     if j > i:
         bus[i:j] += a[: j - i] * (10 ** (g / 20))
+
+
+def room_tone(n, db):
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', f'anoisesrc=color=pink:seed=7:r={SR}:d={n / SR + 0.1:.2f}',
+                          '-af', 'lowpass=f=6000', '-f', 'f32le', '-ac', '2', '-ar', str(SR), '-'], capture_output=True, check=True).stdout
+    b = np.frombuffer(raw, dtype=np.float32).reshape(-1, 2)[:n].copy()
+    b = np.pad(b, ((0, n - len(b)), (0, 0)))
+    return b / (np.sqrt(np.mean(b ** 2)) + 1e-9) * (10 ** (db / 20))
+
+
 def main(cfg_path, out):
     cfg = json.load(open(cfg_path))
     n = int(cfg['duration'] * SR)
@@ -54,28 +86,13 @@ def main(cfg_path, out):
             a[:min(len(a), 64)] *= np.linspace(0, 1, min(len(a), 64))[:, None]
         place(sfx, a, c['t'], c.get('g', -10))
     if cfg.get('room') is not None:
-        rng = np.random.default_rng(7)
-        w = rng.standard_normal((n, 2)).astype(np.float32)
-        # pink-ish: cumulative leaky integration then lowpass
-        b = np.zeros_like(w); acc = np.zeros(2, np.float32)
-        alpha = 0.985
-        for s0 in range(0, n, 48000):
-            seg = w[s0:s0 + 48000]
-            out_seg = np.empty_like(seg)
-            for i in range(len(seg)):
-                acc = alpha * acc + (1 - alpha) * seg[i]
-                out_seg[i] = acc
-            b[s0:s0 + 48000] = out_seg
-        b /= (np.sqrt(np.mean(b ** 2)) + 1e-9)
-        sfx += b * (10 ** (cfg['room'] / 20))
-    # sidechain duck sfx under voice
+        sfx += room_tone(n, cfg['room'])
     duck = cfg.get('duck_db', 6)
     if duck and voice.any():
         env = np.abs(voice).max(1)
         win = int(0.03 * SR)
         env = np.convolve(env, np.ones(win) / win, 'same')
         on = (env > 0.02).astype(np.float32)
-        # attack 20ms, release 250ms smoothing
         g = np.empty_like(on); cur = 0.0
         a_k = 1 - np.exp(-1 / (0.02 * SR)); r_k = 1 - np.exp(-1 / (0.25 * SR))
         for i in range(len(on)):
@@ -92,5 +109,19 @@ def main(cfg_path, out):
     subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', tmp, '-af', f"loudnorm=I={lufs}:TP=-1.5:LRA=11:measured_I={js['input_i']}:measured_TP={js['input_tp']}:measured_LRA={js['input_lra']}:measured_thresh={js['input_thresh']}:offset={js['target_offset']}:linear=true,aresample=48000", '-ar', '48000', out], check=True)
     os.remove(tmp)
     print('mixed', out, 'input', js['input_i'], 'LUFS')
+
+
+def libs(pairs):
+    for pair in pairs:
+        name, _, path = pair.partition('=')
+        LIB[name.strip()] = os.path.expanduser(path.strip())
+
+
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('cues')
+    p.add_argument('out')
+    p.add_argument('--lib', action='append', default=[], help='name=path of a sound library folder')
+    a = p.parse_args()
+    libs([x for x in os.environ.get('SFX_LIBS', '').split(',') if '=' in x] + a.lib)
+    main(a.cues, a.out)

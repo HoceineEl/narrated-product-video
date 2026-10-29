@@ -1,3 +1,4 @@
+// Example GSAP timeline from a shipped launch film: every tween is at("word", offset), T from word_times.py, RECTS from DOM rects shot with the screenshots.
 const tl = gsap.timeline({ paused: true });
 const T = window.T, RX = window.RECTS;
 const E = "power3.out", EI = "power2.inOut", B = "back.out(1.7)";
