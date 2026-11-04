@@ -21,7 +21,9 @@ Free sources: Kenney (UI, interface, impact packs, CC0), Mixkit (whooshes, pads)
 
 ## Music
 
-No music unless the user asks. A voice plus foley mix scores as launch-grade on its own. When music is wanted, keep the bed 14–18 dB under the voice and let the mixer duck it.
+No music unless the user asks. A voice plus foley mix scores as launch-grade on its own. When music is wanted, keep the bed 14–18 dB under the voice and let the mixer duck it. Showreels are music-first: lock the track to the beat grid with `beats.py fit` (or make a stylised score with `beats.py synth`), see `showreel.md`.
+
+Fewer, better sounds: 1–3 hero hits per film beat a whoosh on every cut. Place each effect by its own measured peak, keep sounds within 40 ms of each other to one, pan by screen x (`((x/1920)*2-1)*0.6`), and check levels in the delivered file (`qa.py --cues`).
 
 ## Mixing
 

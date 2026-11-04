@@ -1,6 +1,8 @@
 # Launch film (HyperFrames)
 
-A 45–75 s film where every visual lands on the word that says it. Built as a HyperFrames composition (HTML rendered to video). Read the `hyperframes` skill for the composition contract if it is installed; this file covers what is specific to a voice-driven film.
+A 45–75 s film where every visual lands on the word that says it. Built as a HyperFrames composition (HTML rendered to video). Read the `hyperframes` skill for the composition contract if it is installed; this file covers what is specific to a voice-driven film. Read `motion.md` (timing, cuts, camera, legibility) and `tone-and-variety.md` (tone sentence, transitions, ledger) before storyboarding.
+
+**Brand kit:** before designing, capture the site's roles with `node recorder/brand_kit.mjs <url> --out brand/` (ground, surface, ink, muted, accent by painted area; fonts; logo; site copy) and show the owner `brand/preview.png`. Build only after they approve it (`"reviewed": true`); otherwise label the render a draft.
 
 ## Order of work
 
@@ -55,4 +57,4 @@ Launch Chromium with `launchPersistentContext` and `--load-extension=<build dir>
 ## Pacing
 
 - Give the payoff shot room: ~1.2 s of silence spliced before the claim line beats a rushed before/after.
-- End card holds 2–3 s after the last word.
+- End card holds 2–2.5 s after its last element lands, with a slow push (`motion.md`).

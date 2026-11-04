@@ -1,0 +1,19 @@
+{
+  "film": "crosslisty-showreel-test",
+  "mode": "showreel",
+  "tone": "bold",
+  "tone_sentence": "I want to say list once and sell everywhere in a bold tone, so the viewer feels the work disappear.",
+  "look": "dark product film, teal accent",
+  "palette": ["#101113", "#FFFFFF", "#2DD4BF"],
+  "music": null,
+  "shots": [
+    {"start": 0.0, "dur": 2.0, "transition": "cut:hard", "entrance": "word-rise", "ease": "power3.out", "direction": "up", "camera": "drift"},
+    {"start": 2.0, "dur": 3.0, "transition": "camera:push-through", "entrance": "already-moving", "ease": "expo.out", "direction": "out", "camera": "push", "surprise": true},
+    {"start": 5.0, "dur": 2.0, "transition": "camera:whip", "entrance": "already-moving", "ease": "power3.in", "direction": "left", "camera": "push"},
+    {"start": 7.0, "dur": 0.5, "transition": "carry:object", "entrance": "scale-settle", "ease": "expo.out", "direction": "in", "camera": "none"},
+    {"start": 7.5, "dur": 0.5, "transition": "cut:anchor-match", "entrance": "scale-settle", "ease": "expo.out", "direction": "left", "camera": "none", "motif": "row"},
+    {"start": 8.0, "dur": 0.5, "transition": "cut:hard", "entrance": "slide", "ease": "power2.out", "direction": "right", "camera": "none", "motif": "row"},
+    {"start": 8.5, "dur": 1.5, "transition": "cut:hard", "entrance": "word-rise", "ease": "power3.out", "direction": "up", "camera": "creep"},
+    {"start": 10.0, "dur": 2.5, "transition": "cut:hard", "entrance": "oversize-settle", "ease": "expo.out", "direction": "in", "camera": "push", "surprise": true}
+  ]
+}

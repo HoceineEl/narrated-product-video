@@ -4,6 +4,7 @@
     }
 
     const ZOOM = window.__DEMO_ZOOM ?? 1.25;
+    const RIPPLE = window.__DEMO_RIPPLE ?? 'soft';
     const THEME = { paper: '#F2EBDD', paperDeep: '#e9e0cf', ink: '#13231C', inkSoft: '#55635c', accent: '#C8694A', brand: '', ...(window.__DEMO_THEME ?? {}) };
     const HIDE = ['[data-demo-hide]', ...(window.__DEMO_HIDE ?? [])].join(', ');
     const store = {
@@ -59,6 +60,10 @@
         .cursor.touch { width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: color-mix(in srgb, ${THEME.ink} 28%, transparent); border: 3px solid rgba(255,255,255,.95); box-shadow: 0 0 0 1px color-mix(in srgb, ${THEME.ink} 35%, transparent), 0 8px 18px rgba(0,0,0,.22); filter: none; }
         .cursor.touch svg { display: none; }
         .cursor.hidden { opacity: 0; }
+        .cursor svg { display: block; transform-origin: 6px 4px; transition: transform .07s cubic-bezier(.3,.7,.4,1); }
+        .cursor.pressed svg { transform: scale(.86); transition-duration: .06s; }
+        .ripple.soft { width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 0; background: color-mix(in srgb, ${THEME.accent} 32%, transparent); animation: soft .45s cubic-bezier(.2,.7,.3,1) forwards; }
+        @keyframes soft { from { opacity: 1; transform: scale(.5); } to { opacity: 0; transform: scale(2.7); } }
         .ripple { position: fixed; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 3px solid var(--teal); z-index: 49; animation: ripple .65s cubic-bezier(.2,.7,.3,1) forwards; }
         .ripple.inner { border: 0; background: color-mix(in srgb, ${THEME.accent} 35%, transparent); animation-duration: .45s; }
         @keyframes ripple { from { opacity: .95; transform: scale(.6); } to { opacity: 0; transform: scale(3.6); } }
@@ -168,15 +173,19 @@
     const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
     const api = {
-        moveCursor(x, y, duration = 700) {
+        moveCursor(x, y, duration = 700, arc = 0.08) {
             cancelAnimationFrame(raf);
             const from = { ...cursorPos };
             const start = performance.now();
+            const dx = x - from.x, dy = y - from.y, len = Math.hypot(dx, dy) || 1;
+            let px = -dy / len, py = dx / len;
+            if (py > 0) { px = -px; py = -py; }
+            const cx = from.x + dx / 2 + px * arc * len, cy = from.y + dy / 2 + py * arc * len;
             return new Promise((resolve) => {
                 const tick = (now) => {
                     const t = Math.min(1, (now - start) / duration);
-                    const k = ease(t);
-                    placeCursor(from.x + (x - from.x) * k, from.y + (y - from.y) * k);
+                    const k = ease(t), j = 1 - k;
+                    placeCursor(j * j * from.x + 2 * j * k * cx + k * k * x, j * j * from.y + 2 * j * k * cy + k * k * y);
                     if (t < 1) { raf = requestAnimationFrame(tick); } else { resolve(); }
                 };
                 raf = requestAnimationFrame(tick);
@@ -184,8 +193,13 @@
         },
         setCursorStyle(style) { cursor.classList.toggle('touch', style === 'touch'); },
         showCursor(show = true) { cursor.classList.toggle('hidden', !show); },
-        ripple(x = cursorPos.x, y = cursorPos.y) {
-            for (const cls of ['ripple', 'ripple inner']) {
+        press(hold = 70) {
+            cursor.classList.add('pressed');
+            return new Promise((resolve) => setTimeout(() => { cursor.classList.remove('pressed'); setTimeout(resolve, 100); }, hold));
+        },
+        ripple(x = cursorPos.x, y = cursorPos.y, style = RIPPLE) {
+            if (!style || style === 'off') return;
+            for (const cls of style === 'ring' ? ['ripple', 'ripple inner'] : ['ripple soft']) {
                 const r = document.createElement('div');
                 r.className = cls;
                 r.style.left = `${x}px`;

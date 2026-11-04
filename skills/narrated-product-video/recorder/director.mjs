@@ -25,16 +25,48 @@ export function rewriteText(map = [], removeSelectors = []) {
 });`;
 }
 
+export function redact(rules = []) {
+    const list = rules.map(({ pattern, selector, replace = 'Jane Doe' }) => ({
+        source: pattern ? (pattern instanceof RegExp ? pattern.source : pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) : null,
+        flags: pattern instanceof RegExp ? (pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g') : 'g',
+        selector: selector ?? null,
+        replace,
+    }));
+    return `(() => {
+    if (window.__demoRedact) return;
+    window.__demoRedact = true;
+    const rules = ${JSON.stringify(list)}.map((r) => ({ ...r, re: r.source ? new RegExp(r.source, r.flags) : null }));
+    const fixText = (n) => { let v = n.nodeValue; for (const r of rules) if (r.re) v = v.replace(r.re, r.replace); if (v !== n.nodeValue) n.nodeValue = v; };
+    const sweep = (root) => {
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n; (n = w.nextNode());) fixText(n);
+        for (const r of rules) if (r.selector) root.querySelectorAll?.(r.selector).forEach((el) => {
+            if ('value' in el && el.tagName !== 'BUTTON') el.value = r.replace; else if (el.textContent !== r.replace) el.textContent = r.replace;
+        });
+        root.querySelectorAll?.('input, textarea').forEach((el) => { for (const r of rules) if (r.re) { const v = el.value.replace(r.re, r.replace); if (v !== el.value) el.value = v; } });
+    };
+    const start = () => {
+        sweep(document.body);
+        new MutationObserver((ms) => { for (const m of ms) {
+            if (m.type === 'characterData') fixText(m.target);
+            m.addedNodes.forEach((n) => n.nodeType === 3 ? fixText(n) : n.nodeType === 1 && sweep(n));
+        } }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    };
+    document.body ? start() : document.addEventListener('DOMContentLoaded', start);
+})();`;
+}
+
 export const presetStorage = (entries = {}) => `try { for (const [k, v] of Object.entries(${JSON.stringify(entries)})) localStorage.setItem(k, v); } catch (e) {}`;
 
 export async function launch() {
-    return chromium.launch({ args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--disable-lcd-text'] });
+    return chromium.launch({ args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--disable-lcd-text', '--hide-scrollbars'] });
 }
 
 export async function recordingContext(browser, {
     name, storageState, viewport = { width: 1920, height: 1080 }, zoom = 1.25, noZoom = false, record = true,
     userAgent, locale = 'en-US', timezoneId = 'UTC', colorScheme = 'light',
     theme = {}, logo = process.env.DEMO_LOGO, hide = [], initScripts = [],
+    ripple = process.env.RIPPLE ?? 'soft', redactRules = [], deviceScaleFactor = 1,
 }) {
     mkdirSync(TAKES, { recursive: true });
     const dir = `${TAKES}/raw-${name}`;
@@ -44,16 +76,22 @@ export async function recordingContext(browser, {
         storageState,
         ignoreHTTPSErrors: true,
         viewport,
-        deviceScaleFactor: 1,
+        deviceScaleFactor,
         locale,
         timezoneId,
         colorScheme,
         ...(userAgent ? { userAgent } : {}),
         ...(record ? { recordVideo: { dir, size: { width: 1920, height: 1080 } } } : {}),
     });
-    await context.addInitScript(({ logo, zoom, noZoom, theme, hide }) => {
-        Object.assign(window, { __DEMO_LOGO: logo, __DEMO_ZOOM: zoom, __DEMO_NO_ZOOM: noZoom, __DEMO_THEME: theme, __DEMO_HIDE: hide });
-    }, { logo: dataUrl(logo), zoom, noZoom, theme, hide });
+    await context.addInitScript(({ logo, zoom, noZoom, theme, hide, ripple }) => {
+        Object.assign(window, { __DEMO_LOGO: logo, __DEMO_ZOOM: zoom, __DEMO_NO_ZOOM: noZoom, __DEMO_THEME: theme, __DEMO_HIDE: hide, __DEMO_RIPPLE: ripple });
+    }, { logo: dataUrl(logo), zoom, noZoom, theme, hide, ripple: ripple === false ? 'off' : ripple });
+    if (redactRules.length) {
+        await context.addInitScript({ content: redact(redactRules) });
+    }
+    context.on('page', (page) => {
+        context.newCDPSession(page).then((cdp) => cdp.send('Emulation.setScrollbarsHidden', { hidden: true })).catch(() => {});
+    });
     for (const content of initScripts) {
         await context.addInitScript({ content });
     }
@@ -62,6 +100,16 @@ export async function recordingContext(browser, {
 }
 
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+export const travelMs = (px) => Math.round(Math.min(900, Math.max(280, 250 + 0.45 * px)));
+
+function arcPoint(from, to, k, arc) {
+    const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
+    let px = -dy / len, py = dx / len;
+    if (py > 0) { px = -px; py = -py; }
+    const cx = from.x + dx / 2 + px * arc * len, cy = from.y + dy / 2 + py * arc * len, j = 1 - k;
+    return { x: j * j * from.x + 2 * j * k * cx + k * k * to.x, y: j * j * from.y + 2 * j * k * cy + k * k * to.y };
+}
 
 export class Director {
     constructor(page, name) {
@@ -72,9 +120,26 @@ export class Director {
         this.mouse = { x: 960, y: 600 };
     }
 
-    mark(label) {
-        this.marks.push({ label, t: (Date.now() - this.t0) / 1000 });
+    mark(label, extra = {}) {
+        this.marks.push({ label, t: (Date.now() - this.t0) / 1000, ...extra });
         console.log(`  [${this.name}] ${label} @ ${((Date.now() - this.t0) / 1000).toFixed(2)}s`);
+    }
+
+    act(kind, r) {
+        if (!r) return;
+        this.mark(`act:${kind}`, { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) });
+    }
+
+    async holdThroughLoad(fn, { cap = 4000 } = {}) {
+        this.mark('hold:start');
+        const started = Date.now();
+        await fn();
+        await Promise.race([
+            this.page.waitForLoadState('load').then(() => this.page.waitForLoadState('networkidle', { timeout: cap }).catch(() => {})),
+            sleep(cap),
+        ]).catch(() => {});
+        await sleep(Math.max(0, Math.min(150, cap - (Date.now() - started))));
+        this.mark('hold:end');
     }
 
     demo(fn, ...args) {
@@ -96,39 +161,57 @@ export class Director {
         return { width: 0, height: 0, ...target };
     }
 
-    async moveTo(target, { duration = 750, dx = 0, dy = 0, anchor = 'center' } = {}) {
+    async moveTo(target, { duration = null, dx = 0, dy = 0, anchor = 'center', arc = 0.08 } = {}) {
         const r = await this.rect(target);
         const x = Math.round(r.x + (anchor === 'left' ? Math.min(40, r.width / 2) : r.width / 2) + dx);
         const y = Math.round(r.y + r.height / 2 + dy);
         const from = { ...this.mouse };
-        const anim = this.demo('moveCursor', x, y, duration);
-        const steps = Math.max(8, Math.round(duration / 30));
+        const ms = duration ?? travelMs(Math.hypot(x - from.x, y - from.y));
+        const anim = this.demo('moveCursor', x, y, ms, arc);
+        const steps = Math.max(8, Math.round(ms / 30));
         for (let i = 1; i <= steps; i++) {
-            const k = ease(i / steps);
-            await this.page.mouse.move(from.x + (x - from.x) * k, from.y + (y - from.y) * k);
+            const p = arcPoint(from, { x, y }, ease(i / steps), arc);
+            await this.page.mouse.move(p.x, p.y);
         }
         await anim;
         this.mouse = { x, y };
+        this.lastRect = r;
         return { x, y };
     }
 
-    async click(target, { duration = 750, pause = 180, dx = 0, dy = 0, force = false } = {}) {
+    async click(target, { duration = null, pause = 200, dx = 0, dy = 0, force = false, loads = false } = {}) {
         const { x, y } = await this.moveTo(target, { duration, dx, dy });
         await sleep(pause);
         this.mark('sfx:click');
+        this.act('click', this.lastRect);
+        const press = this.demo('press', 70);
         await this.demo('ripple', x, y);
-        if (typeof target.click === 'function' && !dx && !dy) {
-            await target.filter({ visible: true }).first().click({ force, timeout: 15000 });
+        const doClick = async () => {
+            if (typeof target.click === 'function' && !dx && !dy) {
+                await target.filter({ visible: true }).first().click({ force, timeout: 15000 });
+            } else {
+                await this.page.mouse.click(x, y, { delay: 70 });
+            }
+        };
+        if (loads) {
+            await press;
+            await this.holdThroughLoad(doClick);
         } else {
-            await this.page.mouse.click(x, y);
+            await doClick();
+            await press;
         }
     }
 
     async type(locator, text, { delay = 55, clear = false } = {}) {
+        const field = locator.first();
+        this.act('type', await field.boundingBox().catch(() => null));
         if (clear) {
-            await locator.first().fill('');
+            await field.fill('');
         }
-        await locator.first().pressSequentially(text, { delay });
+        await field.pressSequentially(text.slice(0, 60), { delay });
+        if (text.length > 60) {
+            await field.pressSequentially(text.slice(60), { delay: 8 });
+        }
     }
 
     caption(opts) { return this.demo('caption', opts); }
@@ -237,14 +320,17 @@ export class Director {
         if (via && await via.count() && await via.first().isVisible()) {
             const box = await via.first().boundingBox();
             if (box && box.y > 60 && box.y + box.height < 1060) {
-                await this.moveTo(via, { duration: 900 });
+                await this.moveTo(via);
                 await sleep(150);
+                this.act('click', box);
+                await this.demo('press', 70);
                 await this.demo('ripple', this.mouse.x, this.mouse.y);
             }
         }
-        await this.page.evaluate((u) => (window.Livewire?.navigate ? window.Livewire.navigate(u) : window.location.assign(u)), url);
-        await this.page.waitForURL((u) => u.toString().startsWith(url.split('?')[0]), { timeout: 30000 }).catch(() => {});
-        await this.page.waitForLoadState('networkidle').catch(() => {});
+        await this.holdThroughLoad(async () => {
+            await this.page.evaluate((u) => (window.Livewire?.navigate ? window.Livewire.navigate(u) : window.location.assign(u)), url);
+            await this.page.waitForURL((u) => u.toString().startsWith(url.split('?')[0]), { timeout: 30000 }).catch(() => {});
+        });
     }
 
     wait(ms) { return sleep(ms); }
